@@ -39,6 +39,7 @@ Your browser opens automatically at `http://localhost:8765`.
 | `movement_tracker.py` | Monitors brokerage rosters for agent movements |
 | `market_data.py` | Ingests and displays Wasatch Back market statistics |
 | `rankings_tracker.py` | Agent performance rankings — import from RealTrends, UAR, etc. |
+| `longitude_sync.py` | Connects Longitude Network PostgreSQL → curation.db (agent triggers, performance articles) |
 | `run_mac.sh` | One-click launcher for Mac |
 | `run_windows.bat` | One-click launcher for Windows |
 
@@ -180,6 +181,58 @@ python3 rankings_tracker.py --stats
 **Getting RealTrends data:** Visit [realtrends.com/ranking/best-real-estate-agents-utah/individuals-by-volume/](https://www.realtrends.com/ranking/best-real-estate-agents-utah/individuals-by-volume/) (published annually ~May). Copy agent rows into a CSV with columns: `rank, agent_name, brokerage, city, state, volume_dollars, units`.
 
 **Supported sources:** `realtrends` | `uar` | `real_producers` | `summit_sir` | `homelight` | `manual`
+
+---
+
+## Longitude Network Integration
+
+`longitude_sync.py` connects the Longitude Network PostgreSQL database (3,669 agents) to the curation dashboard. Run it after `aggregator.py` to populate the Agent Intel and Market Data categories with intelligence derived from your own agent database.
+
+**Requires:** `pip install psycopg2-binary` (one-time setup)
+
+```bash
+# Full sync — agent mentions + performance articles + network stats
+python3 longitude_sync.py
+
+# Preview without saving anything
+python3 longitude_sync.py --dry-run
+
+# Scan articles for agent name mentions only
+python3 longitude_sync.py --scan-articles
+
+# Generate performance snapshot articles (RealTrends rank + Zillow sales)
+python3 longitude_sync.py --performance-snapshot
+
+# Generate brokerage market share article (market-data tab)
+python3 longitude_sync.py --network-stats
+
+# Show integration stats
+python3 longitude_sync.py --stats
+
+# Look up a specific agent's article mentions
+python3 longitude_sync.py --agent "Jane Smith"
+```
+
+**What gets created in the dashboard:**
+
+| Article type | Dashboard tab | Trigger |
+|---|---|---|
+| RealTrends ranked agents summary | Agent Intel | Agents with `realtrends_rank` in your DB |
+| Top producers by Zillow volume | Agent Intel | Agents with 5+ `zillow_sales_12mo` |
+| Individual agent profiles | Agent Intel | Agents with rank AND 10+ Zillow sales |
+| Name mentions in RSS articles | Agent Intel | Fuzzy name match in article text |
+| Brokerage distribution stats | Market Data | Run with `--network-stats` |
+
+**PostgreSQL connection** (override with env vars `PG_HOST`, `PG_PORT`, `PG_DBNAME`, `PG_USER`, `PG_PASSWORD`):
+- Host: `localhost:5433`
+- Database: `longitude_network`
+
+**Recommended daily workflow:**
+```bash
+python3 aggregator.py       # 1. fetch latest RSS articles
+python3 longitude_sync.py   # 2. cross-reference against agent database
+python3 server.py           # 3. open dashboard
+```
 
 ---
 
