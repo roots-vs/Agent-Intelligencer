@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wasatch Intelligence — Curation Dashboard</title>
+<style>
+  :root {
+    --navy:    #0D1B3E;
+    --amber:   #E8A020;
+    --cream:   #F8F6F1;
+    --green:   #1A6B3A;
+    --purple:  #5E1B8C;
+    --red:     #8B2020;
+    --slate:   #3A5068;
+    --gray:    #E8E6E1;
+    --text:    #1A1A2E;
+    --muted:   #888;
+    --saved:   #1565C0;
+    --archive: #6B6B6B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; background: var(--cream); color: var(--text); font-size: 14px; }
+
+  /* ── Header ── */
+  header {
+    background: var(--navy); color: #fff; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  header .logo { font-size: 18px; font-weight: 700; letter-spacing: .03em; }
+  header .logo span { color: var(--amber); }
+  header .meta { font-size: 12px; color: rgba(255,255,255,.55); }
+
+  /* ── Stats bar ── */
+  #statsBar {
+    background: var(--navy); border-top: 1px solid rgba(255,255,255,.08);
+    padding: 8px 24px; display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .stat { color: rgba(255,255,255,.7); font-size: 12px; }
+  .stat strong { color: #fff; font-size: 16px; margin-right: 4px; }
+  .stat.highlight-amber strong { color: var(--amber); }
+  .stat.highlight-blue  strong { color: #64B5F6; }
+  .stat.highlight-gray  strong { color: #aaa; }
+
+  /* ── Controls ── */
+  #controls {
+    padding: 10px 24px; background: #fff; border-bottom: 1px solid var(--gray);
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  #timeRow {
+    width: 100%; display: flex; gap: 6px; align-items: center;
+    padding-bottom: 8px; border-bottom: 1px solid var(--gray); margin-bottom: 2px;
+  }
+  #timeRow span { font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); margin-right: 4px; }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--gray);
+    background: #fff; cursor: pointer; font-size: 12px; font-weight: 500;
+    transition: all .15s;
+  }
+  .filter-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .filter-btn:hover:not(.active) { border-color: var(--navy); color: var(--navy); }
+  .filter-btn.time-btn.active { background: var(--amber); border-color: var(--amber); color: var(--navy); }
+  .search-box {
+    padding: 6px 12px; border: 1.5px solid var(--gray); border-radius: 20px;
+    font-size: 13px; width: 220px; outline: none;
+  }
+  .search-box:focus { border-color: var(--amber); }
+  .bulk-btn {
+    padding: 6px 12px; border-radius: 6px; border: none;
+    background: var(--amber); color: var(--navy); font-weight: 700;
+    font-size: 11px; cursor: pointer; white-space: nowrap;
+  }
+  .bulk-btn:hover { background: #d4910d; }
+  .bulk-btn.save-btn { background: #E8F0FE; color: var(--saved); border: 1.5px solid #c0d0f0; }
+  .bulk-btn.save-btn:hover { background: #d0e0ff; }
+  .bulk-btn.skip-btn { background: #f0f0f0; color: #666; }
+  .bulk-btn.skip-btn:hover { background: #e0e0e0; }
+  .export-btn {
+    padding: 6px 12px; border-radius: 6px; border: 1.5px solid var(--navy);
+    background: var(--navy); color: #fff; font-weight: 700; font-size: 11px; cursor: pointer; white-space: nowrap;
+  }
+  .compose-btn {
+    padding: 6px 12px; border-radius: 6px; border: 1.5px solid var(--green);
+    background: var(--green); color: #fff; font-weight: 700; font-size: 11px; cursor: pointer; white-space: nowrap;
+  }
+  .compose-btn:hover { background: #145a2f; }
+  #checkedCount { font-size: 12px; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+  /* ── Article grid ── */
+  #articles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px; padding: 16px 24px;
+    max-height: calc(100vh - 210px); overflow-y: auto;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: #fff; border-radius: 10px;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    padding: 14px 16px;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative;
+  }
+  .card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.12); }
+  .card.selected  { border-color: var(--amber); background: #FFFBF0; }
+  .card.reviewed  { border-color: #B8D4F0; background: #F6FAFF; }
+  .card.archived  { border-color: #ddd; background: #FAFAFA; opacity: .75; }
+  .card.skip      { opacity: .4; }
+
+  .card-check {
+    position: absolute; top: 10px; right: 10px;
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 2px solid var(--gray); background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .card-check.on { background: var(--amber); border-color: var(--amber); }
+  .card-check.on::after { content: "✓"; font-size: 11px; color: #fff; font-weight: 700; }
+
+  .card-source {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; margin-bottom: 6px; padding-right: 24px;
+  }
+  .card-source .cat-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 10px;
+    background: var(--cream); color: var(--navy); margin-left: 6px;
+    font-size: 9px; text-transform: none; letter-spacing: 0;
+  }
+  .card-source .market-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 10px;
+    margin-left: 4px; font-size: 9px; text-transform: none; letter-spacing: 0;
+  }
+  .market-badge.wasatch-back { background: #E8F5E9; color: #1A6B3A; }
+  .market-badge.national     { background: #E3F2FD; color: #1565C0; }
+  .market-badge.comp-market  { background: #F3E5F5; color: #6A1B9A; }
+
+  .cat-national-brokerage .card-source { color: #1565C0; }
+  .cat-local-market       .card-source { color: var(--green); }
+  .cat-agent-intel        .card-source { color: var(--navy); }
+  .cat-industry-practice  .card-source { color: var(--slate); }
+  .cat-market-data        .card-source { color: var(--red); }
+  .cat-comp-market        .card-source { color: var(--purple); }
+
+  .card-title { font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 6px; color: var(--text); }
+  .card-title a { color: inherit; text-decoration: none; }
+  .card-title a:hover { text-decoration: underline; color: var(--amber); }
+
+  .card-summary {
+    font-size: 12px; color: var(--muted); line-height: 1.55;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 8px;
+  }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  }
+  .card-date { font-size: 11px; color: var(--muted); }
+  .card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+  .action-btn {
+    padding: 3px 9px; border-radius: 12px; border: 1.5px solid var(--gray);
+    font-size: 11px; cursor: pointer; background: #fff; font-weight: 600;
+    transition: all .12s; white-space: nowrap;
+  }
+  .action-btn.select { border-color: var(--amber); color: var(--amber); }
+  .action-btn.select:hover  { background: var(--amber); color: var(--navy); }
+  .action-btn.select.active { background: var(--amber); color: var(--navy); }
+  .action-btn.select.deselect { background: var(--amber); color: var(--navy); }
+  .action-btn.save   { border-color: var(--saved); color: var(--saved); }
+  .action-btn.save:hover  { background: var(--saved); color: #fff; }
+  .action-btn.save.active { background: var(--saved); color: #fff; }
+  .action-btn.skip   { border-color: var(--muted); color: var(--muted); }
+  .action-btn.skip:hover  { background: var(--muted); color: #fff; }
+  .action-btn.skip.active { background: var(--muted); color: #fff; }
+  .action-btn.reset  { border-color: var(--gray); color: var(--muted); }
+  .action-btn.reset:hover { background: var(--gray); }
+
+  /* ── Issue tag ── */
+  .issue-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 8px; background: var(--green); color: #fff; margin-left: 6px;
+    text-transform: none; letter-spacing: 0;
+  }
+
+  /* ── Empty state ── */
+  #empty {
+    display: none; text-align: center; padding: 80px 24px; color: var(--muted);
+    grid-column: 1/-1;
+  }
+  #empty h3 { font-size: 18px; margin-bottom: 8px; }
+
+  /* ── Side panels (shared) ── */
+  .side-panel {
+    display: none; position: fixed; top: 0; right: 0; bottom: 0;
+    background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,.15); z-index: 200;
+    overflow-y: auto; flex-direction: column;
+  }
+  .panel-header {
+    padding: 18px 24px; color: #fff;
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .panel-header h2 { font-size: 17px; }
+  .close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; line-height: 1; }
+  .panel-body { padding: 20px 24px; flex: 1; }
+
+  /* Export panel */
+  #exportPanel { width: 440px; }
+  #exportPanel .panel-header { background: var(--navy); }
+  .export-article { border: 1px solid var(--gray); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .export-article h4 { font-size: 13px; margin-bottom: 4px; }
+  .export-article p  { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .export-article a  { font-size: 11px; color: var(--amber); word-break: break-all; }
+  .copy-md-btn {
+    display: block; width: 100%; padding: 10px; background: var(--amber);
+    color: var(--navy); font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 14px; margin-bottom: 12px;
+  }
+  #copyStatus { text-align: center; font-size: 12px; color: var(--green); height: 16px; }
+
+  /* Compose panel */
+  #composePanel { width: 580px; }
+  #composePanel .panel-header { background: var(--green); }
+  .compose-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; display: block;
+  }
+  .section-block { margin-bottom: 20px; }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .type-btn {
+    padding: 10px 8px; border-radius: 8px; border: 2px solid var(--gray);
+    background: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+    text-align: center; color: var(--text); transition: all .15s; line-height: 1.35;
+  }
+  .type-btn .type-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .type-btn.active { border-color: var(--green); background: #EEF7F2; color: var(--green); }
+  .type-btn:hover:not(.active) { border-color: var(--navy); }
+  .theme-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray);
+    border-radius: 8px; font-size: 13px; outline: none;
+    font-family: inherit; resize: vertical; min-height: 60px;
+  }
+  .theme-input:focus { border-color: var(--green); }
+  .source-chips { display: flex; flex-direction: column; gap: 6px; }
+  .source-chip {
+    background: var(--cream); border-radius: 6px; padding: 8px 10px;
+    font-size: 12px; line-height: 1.4; border: 1px solid var(--gray);
+  }
+  .source-chip strong { display: block; color: var(--text); }
+  .source-chip span { color: var(--muted); font-size: 11px; }
+  .generate-btn {
+    display: block; width: 100%; padding: 12px; background: var(--green);
+    color: #fff; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 14px;
+  }
+  .generate-btn:hover { background: #145a2f; }
+  #promptOutput { display: none; margin-top: 20px; }
+  .prompt-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; display: block; }
+  #promptText {
+    width: 100%; border: 1.5px solid var(--gray); border-radius: 8px;
+    padding: 12px; font-size: 12px; font-family: "Inter", system-ui, sans-serif;
+    line-height: 1.6; resize: vertical; min-height: 260px; outline: none;
+    color: var(--text); background: #FAFAFA;
+  }
+  .prompt-copy-btn {
+    display: block; width: 100%; margin-top: 10px; padding: 11px;
+    background: var(--amber); color: var(--navy);
+    font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-size: 13px;
+  }
+  .prompt-copy-btn:hover { background: #d4910d; }
+  #composeStatus { text-align: center; font-size: 12px; color: var(--green); height: 16px; margin-top: 6px; }
+  .prompt-hint {
+    font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.6;
+    background: var(--cream); border-radius: 6px; padding: 10px 12px;
+  }
+  .prompt-hint a { color: var(--green); font-weight: 600; }
+
+  /* Pick-2 chip selectors */
+  .pick-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .pick-chip {
+    padding: 5px 11px; border-radius: 20px; border: 1.5px solid var(--gray);
+    background: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: var(--muted); transition: all .15s; white-space: nowrap;
+  }
+  .pick-chip.selected { border-color: var(--green); background: #EEF7F2; color: var(--green); }
+  .pick-chip:hover:not(.selected) { border-color: var(--navy); color: var(--navy); }
+  .pick-limit-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .small-input {
+    width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray);
+    border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;
+  }
+  .small-input:focus { border-color: var(--green); }
+
+  .archive-block {
+    display: none; margin-top: 20px; border-top: 1px solid var(--gray); padding-top: 18px;
+  }
+  .archive-block h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .archive-block p { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .archive-input {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--gray);
+    border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; margin-bottom: 10px;
+  }
+  .archive-input:focus { border-color: var(--green); }
+  .archive-btn {
+    display: block; width: 100%; padding: 10px; background: var(--archive);
+    color: #fff; font-weight: 700; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 13px;
+  }
+  .archive-btn:hover { background: #555; }
+  #archiveStatus { text-align: center; font-size: 12px; color: var(--green); height: 16px; margin-top: 6px; }
+  .no-selected-msg { text-align: center; padding: 30px 20px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">WASATCH <span>INTELLIGENCE</span> — Longitude</div>
+  <div class="meta" id="lastFetch">Loading…</div>
+</header>
+
+<div id="statsBar">
+  <div class="stat"><strong id="sTotal">–</strong> total</div>
+  <div class="stat"><strong id="sNew">–</strong> new</div>
+  <div class="stat highlight-blue"><strong id="sSaved">–</strong> saved</div>
+  <div class="stat highlight-amber"><strong id="sSelected">–</strong> in queue</div>
+  <div class="stat highlight-gray"><strong id="sArchived">–</strong> archived</div>
+  <div class="stat"><strong id="sSkip">–</strong> skipped</div>
+</div>
+
+<div id="controls">
+  <!-- Time range row -->
+  <div id="timeRow">
+    <span>Show:</span>
+    <button class="filter-btn time-btn active" data-days="14">2 weeks</button>
+    <button class="filter-btn time-btn" data-days="30">1 month</button>
+    <button class="filter-btn time-btn" data-days="90">3 months</button>
+    <button class="filter-btn time-btn" data-days="0">All time</button>
+  </div>
+  <!-- Status filters -->
+  <div class="filter-group" id="statusFilters">
+    <button class="filter-btn active" data-val="all">All</button>
+    <button class="filter-btn" data-val="new">New</button>
+    <button class="filter-btn" data-val="reviewed">Saved ★</button>
+    <button class="filter-btn" data-val="selected">In Queue</button>
+    <button class="filter-btn" data-val="archived">Archived</button>
+    <button class="filter-btn" data-val="skip">Skipped</button>
+  </div>
+  <!-- Category filters -->
+  <div class="filter-group" id="catFilters">
+    <button class="filter-btn active" data-val="all">All Topics</button>
+    <button class="filter-btn" data-val="national-brokerage">Brokerage</button>
+    <button class="filter-btn" data-val="local-market">Local Market</button>
+    <button class="filter-btn" data-val="agent-intel">Agent Intel</button>
+    <button class="filter-btn" data-val="industry-practice">Practice</button>
+    <button class="filter-btn" data-val="market-data">Market Data</button>
+    <button class="filter-btn" data-val="comp-market">Comp Markets</button>
+  </div>
+  <input class="search-box" id="searchBox" placeholder="Search articles, sources…" />
+  <!-- Bulk actions -->
+  <button class="bulk-btn" id="bulkQueueBtn">★ Add to Queue</button>
+  <button class="bulk-btn save-btn" id="bulkSaveBtn">Save for Later</button>
+  <button class="bulk-btn skip-btn" id="bulkSkipBtn">Skip</button>
+  <button class="export-btn" id="openExportBtn">Export →</button>
+  <button class="compose-btn" id="openComposeBtn">✍ Compose</button>
+  <span id="checkedCount"></span>
+</div>
+
+<div id="articles">
+  <div id="empty">
+    <h3>No articles found</h3>
+    <p>Run <code>python aggregator.py</code> to fetch content, then refresh this page.</p>
+  </div>
+</div>
+
+<!-- Compose Panel -->
+<div id="composePanel" class="side-panel">
+  <div class="panel-header">
+    <h2>✍ Compose Article</h2>
+    <button class="close-btn" id="closeComposeBtn">×</button>
+  </div>
+  <div class="panel-body">
+
+    <div class="section-block">
+      <span class="compose-label">1 — Content type</span>
+      <div class="type-grid">
+        <button class="type-btn active" data-type="market-update">
+          <span class="type-icon">📊</span>Market Update
+        </button>
+        <button class="type-btn" data-type="agent-spotlight">
+          <span class="type-icon">🏆</span>Agent Spotlight
+        </button>
+        <button class="type-btn" data-type="tool-spotlight">
+          <span class="type-icon">🛠</span>Tool Spotlight
+        </button>
+        <button class="type-btn" data-type="brokerage-news">
+          <span class="type-icon">🏢</span>Brokerage News
+        </button>
+        <button class="type-btn" data-type="industry-practice">
+          <span class="type-icon">🎯</span>Industry Practice
+        </button>
+        <button class="type-btn" data-type="comp-market-brief">
+          <span class="type-icon">🏔</span>Comp Market Brief
+        </button>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">2 — Theme or angle <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
+      <textarea class="theme-input" id="themeInput"
+        placeholder="e.g. Spring listing season driving inventory surge in Heber Valley…"></textarea>
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">3 — Audience focus <span style="font-weight:400;text-transform:none;letter-spacing:0">pick 2</span></span>
+      <div class="pick-chips" id="audienceChips">
+        <button class="pick-chip selected" data-val="Buyer Agents">Buyer Agents</button>
+        <button class="pick-chip selected" data-val="Listing Agents">Listing Agents</button>
+        <button class="pick-chip" data-val="Team Leaders">Team Leaders</button>
+        <button class="pick-chip" data-val="Brokers/Owners">Brokers / Owners</button>
+        <button class="pick-chip" data-val="New Agents">New Agents</button>
+      </div>
+      <div class="pick-limit-hint" id="audienceHint">2 of 2 selected</div>
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">4 — Market zone <span style="font-weight:400;text-transform:none;letter-spacing:0">pick 2</span></span>
+      <div class="pick-chips" id="zoneChips">
+        <button class="pick-chip selected" data-val="Park City">Park City</button>
+        <button class="pick-chip selected" data-val="Heber Valley">Heber Valley</button>
+        <button class="pick-chip" data-val="Midway">Midway</button>
+        <button class="pick-chip" data-val="Coalville/Oakley">Coalville / Oakley</button>
+        <button class="pick-chip" data-val="Kamas Valley">Kamas Valley</button>
+        <button class="pick-chip" data-val="Summit County (all)">Summit County</button>
+        <button class="pick-chip" data-val="Wasatch County (all)">Wasatch County</button>
+      </div>
+      <div class="pick-limit-hint" id="zoneHint">2 of 2 selected</div>
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">5 — Calendar moment</span>
+      <select class="small-input" id="calendarInput">
+        <option value="spring listing season">Spring Listing Season (default)</option>
+        <option value="summer resort slowdown">Summer Resort Slowdown</option>
+        <option value="fall shoulder season">Fall Shoulder Season</option>
+        <option value="winter ski season peak">Winter Ski Season Peak</option>
+        <option value="end of year tax and closing push">End of Year Tax / Closing Push</option>
+        <option value="NAR conference season">NAR Conference Season</option>
+        <option value="new MLS rules cycle">New MLS Rules Cycle</option>
+        <option value="mortgage rate shift">Mortgage Rate Shift</option>
+        <option value="">— Custom (type in Theme field above) —</option>
+      </select>
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">6 — Platform focus <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></span>
+      <input class="small-input" id="platformInput" type="text"
+        placeholder="e.g. MLS platform, CRM / lead gen, transaction management…" />
+    </div>
+
+    <div class="section-block">
+      <span class="compose-label">7 — Source articles <span id="sourceCount" style="font-weight:400;text-transform:none;letter-spacing:0"></span></span>
+      <div class="source-chips" id="sourceChips">
+        <div class="no-selected-msg">No articles in queue yet.<br>Click <strong>★ Queue</strong> on cards first.</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <button class="generate-btn" id="generatePromptBtn">Generate Claude Prompt →</button>
+    </div>
+
+    <div id="promptOutput">
+      <span class="prompt-label">8 — Copy prompt → paste into your Wasatch Intelligence GPT</span>
+      <textarea id="promptText" readonly></textarea>
+      <button class="prompt-copy-btn" id="copyPromptBtn">Copy Prompt to Clipboard</button>
+      <div id="composeStatus"></div>
+      <div class="prompt-hint">
+        Paste into your <strong>Wasatch Intelligence GPT</strong> to generate the draft. Use the GPT system prompt from the project charter (Section 5).
+      </div>
+
+      <!-- Archive after compose -->
+      <div class="archive-block" id="archiveBlock">
+        <h3>Archive your sources</h3>
+        <p>Tag these source articles so they stay searchable in your intelligence library.</p>
+        <input class="archive-input" id="archiveTagInput" placeholder="e.g. Park City Market Update — April 2026" />
+        <button class="archive-btn" id="archiveBtn">Archive Sources with This Tag →</button>
+        <div id="archiveStatus"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Export Panel -->
+<div id="exportPanel" class="side-panel">
+  <div class="panel-header">
+    <h2>In-Queue Articles</h2>
+    <button class="close-btn" id="closeExportBtn">×</button>
+  </div>
+  <div class="panel-body">
+    <button class="copy-md-btn" id="copyMarkdownBtn">Copy as Markdown</button>
+    <div id="copyStatus"></div>
+    <div id="exportList"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let allArticles = [];
+let checkedIds  = new Set();
+let filters     = { status: "all", cat: "all", search: "", days: 14 };
+
+// ── API helpers ────────────────────────────────────────────────────────────
+async function api(path, method="GET", body=null) {
+  const opts = { method, headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+// ── Load stats ─────────────────────────────────────────────────────────────
+async function loadStats() {
+  const s = await api("/api/stats");
+  document.getElementById("sTotal").textContent    = s.total    ?? 0;
+  document.getElementById("sNew").textContent      = s.new      ?? 0;
+  document.getElementById("sSaved").textContent    = s.reviewed ?? 0;
+  document.getElementById("sSelected").textContent = s.selected ?? 0;
+  document.getElementById("sArchived").textContent = s.archived ?? 0;
+  document.getElementById("sSkip").textContent     = s.skip     ?? 0;
+  if (s.last_fetch) {
+    const d = new Date(s.last_fetch);
+    document.getElementById("lastFetch").textContent =
+      "Last fetch: " + d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  }
+}
+
+// ── Load articles ──────────────────────────────────────────────────────────
+async function loadArticles() {
+  const params = new URLSearchParams({
+    status:   filters.status,
+    category: filters.cat,
+    days:     filters.days
+  });
+  allArticles = await api("/api/articles?" + params);
+  renderArticles();
+}
+
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch { return iso.slice(0,10); }
+}
+
+function marketBadgeClass(marketArea) {
+  if (!marketArea) return "";
+  const m = marketArea.toLowerCase().replace(/\s/g, "-");
+  if (m.includes("wasatch")) return "wasatch-back";
+  if (m.includes("comp"))    return "comp-market";
+  return "national";
+}
+
+function renderArticles() {
+  const search = filters.search.toLowerCase();
+  let visible = allArticles;
+  if (search) {
+    visible = visible.filter(a =>
+      (a.title||"").toLowerCase().includes(search) ||
+      (a.summary||"").toLowerCase().includes(search) ||
+      (a.source||"").toLowerCase().includes(search) ||
+      (a.issue_tag||"").toLowerCase().includes(search)
+    );
+  }
+
+  const container = document.getElementById("articles");
+  const empty     = document.getElementById("empty");
+  container.innerHTML = "";
+  container.appendChild(empty);
+
+  if (visible.length === 0) { empty.style.display = "block"; return; }
+  empty.style.display = "none";
+
+  visible.forEach(art => {
+    const isChecked  = checkedIds.has(art.id);
+    const catClass   = "cat-" + (art.category || "").replace(/[^a-z0-9]/g,"-");
+    const isSelected = art.status === "selected";
+    const isSaved    = art.status === "reviewed";
+    const card = document.createElement("div");
+    card.className = `card ${art.status} ${catClass}`;
+    card.dataset.id = art.id;
+
+    const queueLabel = isSelected ? "★ Queued" : "★ Queue";
+    const queueExtra = isSelected ? " deselect" : "";
+    const mBadge = art.market_area
+      ? `<span class="market-badge ${marketBadgeClass(art.market_area)}">${art.market_area}</span>`
+      : "";
+
+    card.innerHTML = `
+      <div class="card-check ${isChecked ? "on" : ""}" data-id="${art.id}"></div>
+      <div class="card-source">
+        ${art.source}
+        <span class="cat-badge">${art.category}</span>
+        ${mBadge}
+        ${art.issue_tag ? `<span class="issue-tag">📁 ${art.issue_tag}</span>` : ""}
+      </div>
+      <div class="card-title">
+        <a href="${art.link}" target="_blank" rel="noopener">${art.title}</a>
+      </div>
+      ${art.summary ? `<div class="card-summary">${art.summary}</div>` : ""}
+      <div class="card-footer">
+        <span class="card-date">${formatDate(art.published)}</span>
+        <div class="card-actions">
+          <button class="action-btn select${queueExtra} ${isSelected ? "active" : ""}"
+            data-action="${isSelected ? "reviewed" : "selected"}" data-id="${art.id}">${queueLabel}</button>
+          <button class="action-btn save ${isSaved ? "active" : ""}"
+            data-action="reviewed" data-id="${art.id}">Save</button>
+          <button class="action-btn skip ${art.status==="skip"?"active":""}"
+            data-action="skip" data-id="${art.id}">Skip</button>
+          ${art.status !== "new" ? `<button class="action-btn reset" data-action="new" data-id="${art.id}">↺</button>` : ""}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  updateCheckedCount();
+}
+
+// ── Update single article status ──────────────────────────────────────────
+async function updateStatus(id, status) {
+  await api("/api/update", "POST", { id, status });
+  const art = allArticles.find(a => a.id == id);
+  if (art) art.status = status;
+  renderArticles();
+  loadStats();
+}
+
+// ── Event delegation on cards ─────────────────────────────────────────────
+document.getElementById("articles").addEventListener("click", async e => {
+  const checkEl = e.target.closest(".card-check");
+  if (checkEl) {
+    const id = parseInt(checkEl.dataset.id);
+    if (checkedIds.has(id)) checkedIds.delete(id);
+    else checkedIds.add(id);
+    checkEl.classList.toggle("on");
+    updateCheckedCount();
+    return;
+  }
+  const btn = e.target.closest(".action-btn");
+  if (btn && btn.dataset.action && btn.dataset.id) {
+    e.stopPropagation();
+    await updateStatus(parseInt(btn.dataset.id), btn.dataset.action);
+  }
+});
+
+function updateCheckedCount() {
+  const n = checkedIds.size;
+  document.getElementById("checkedCount").textContent = n > 0 ? `${n} checked` : "";
+}
+
+// ── Time range filter ─────────────────────────────────────────────────────
+document.getElementById("timeRow").addEventListener("click", e => {
+  const btn = e.target.closest(".time-btn");
+  if (!btn) return;
+  document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  filters.days = parseInt(btn.dataset.days);
+  loadArticles();
+});
+
+// ── Status filters ─────────────────────────────────────────────────────────
+document.getElementById("statusFilters").addEventListener("click", e => {
+  const btn = e.target.closest(".filter-btn");
+  if (!btn) return;
+  document.querySelectorAll("#statusFilters .filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  filters.status = btn.dataset.val;
+  loadArticles();
+});
+
+// ── Category filters ───────────────────────────────────────────────────────
+document.getElementById("catFilters").addEventListener("click", e => {
+  const btn = e.target.closest(".filter-btn");
+  if (!btn) return;
+  document.querySelectorAll("#catFilters .filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  filters.cat = btn.dataset.val;
+  loadArticles();
+});
+
+// ── Search ─────────────────────────────────────────────────────────────────
+let searchTimer;
+document.getElementById("searchBox").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { filters.search = e.target.value; renderArticles(); }, 200);
+});
+
+// ── Bulk actions ───────────────────────────────────────────────────────────
+document.getElementById("bulkQueueBtn").addEventListener("click", async () => {
+  if (!checkedIds.size) return;
+  await api("/api/bulk-update", "POST", { ids: [...checkedIds], status: "selected" });
+  checkedIds.forEach(id => { const a = allArticles.find(x => x.id==id); if(a) a.status="selected"; });
+  checkedIds.clear();
+  renderArticles(); loadStats();
+});
+
+document.getElementById("bulkSaveBtn").addEventListener("click", async () => {
+  if (!checkedIds.size) return;
+  await api("/api/bulk-update", "POST", { ids: [...checkedIds], status: "reviewed" });
+  checkedIds.forEach(id => { const a = allArticles.find(x => x.id==id); if(a) a.status="reviewed"; });
+  checkedIds.clear();
+  renderArticles(); loadStats();
+});
+
+document.getElementById("bulkSkipBtn").addEventListener("click", async () => {
+  if (!checkedIds.size) return;
+  await api("/api/bulk-update", "POST", { ids: [...checkedIds], status: "skip" });
+  checkedIds.forEach(id => { const a = allArticles.find(x => x.id==id); if(a) a.status="skip"; });
+  checkedIds.clear();
+  renderArticles(); loadStats();
+});
+
+// ── Export panel ───────────────────────────────────────────────────────────
+document.getElementById("openExportBtn").addEventListener("click", async () => {
+  const selected = await api("/api/export");
+  const list = document.getElementById("exportList");
+  list.innerHTML = "";
+  if (!selected.length) {
+    list.innerHTML = "<p style='color:#888;text-align:center;padding:20px'>No articles in queue.<br>Click ★ Queue on cards to add them.</p>";
+  } else {
+    selected.forEach(a => {
+      const div = document.createElement("div");
+      div.className = "export-article";
+      div.innerHTML = `
+        <h4>${a.title}</h4>
+        <p>${a.source} · ${formatDate(a.published)} · <em>${a.category}</em>${a.market_area ? ` · ${a.market_area}` : ""}</p>
+        <p style="margin-bottom:4px">${a.summary || ""}</p>
+        <a href="${a.link}" target="_blank">${a.link}</a>
+      `;
+      list.appendChild(div);
+    });
+  }
+  document.getElementById("exportPanel").style.display = "flex";
+});
+document.getElementById("closeExportBtn").addEventListener("click", () => {
+  document.getElementById("exportPanel").style.display = "none";
+});
+
+document.getElementById("copyMarkdownBtn").addEventListener("click", async () => {
+  const selected = await api("/api/export");
+  if (!selected.length) return;
+  const grouped = {};
+  selected.forEach(a => {
+    const cat = a.category || "other";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(a);
+  });
+  let md = "## Wasatch Intelligence — Selected Signals\n\n";
+  for (const [cat, arts] of Object.entries(grouped)) {
+    md += `### ${cat.toUpperCase().replace(/-/g," ")}\n\n`;
+    arts.forEach(a => {
+      md += `**${a.title}**  \n`;
+      md += `*${a.source} — ${formatDate(a.published)}*  \n`;
+      if (a.summary) md += `${a.summary}  \n`;
+      md += `[Read →](${a.link})\n\n`;
+    });
+  }
+  try {
+    await navigator.clipboard.writeText(md);
+    const s = document.getElementById("copyStatus");
+    s.textContent = "✓ Copied to clipboard";
+    setTimeout(() => s.textContent = "", 2000);
+  } catch(e) {
+    document.getElementById("copyStatus").textContent = "Copy failed — try selecting manually";
+  }
+});
+
+// ── Compose panel ─────────────────────────────────────────────────────────
+const TYPE_META = {
+  "market-update": {
+    label: "Market Update",
+    length: "400–550 words",
+    outputFormat: `- Lede: lead with a data point (1–2 sentences)
+- Body: 3–4 paragraphs advancing the story or adding a useful angle
+- "What This Means for Your Listings": 2–3 bullets for agents
+- Close: specific, actionable — what does an agent do with this?`
+  },
+  "agent-spotlight": {
+    label: "Agent Spotlight",
+    length: "450–600 words",
+    outputFormat: `- Open with a quote or scene
+- Body: 3–4 paragraphs on the agent's approach, market knowledge, and tactics
+- Close: one piece of advice the agent would give to newer agents`
+  },
+  "tool-spotlight": {
+    label: "Tool Spotlight",
+    length: "400–500 words",
+    outputFormat: `- What it does (1 paragraph)
+- Where it breaks down (1 paragraph)
+- How to pilot it with one listing (3 bullets)
+- Brief close: is it worth the time for Wasatch Back agents?`
+  },
+  "brokerage-news": {
+    label: "Brokerage News",
+    length: "300–400 words",
+    outputFormat: `- Lead with the business implication for local agents, not the corporate announcement
+- Body: 2–3 paragraphs on what this means for agents in the Wasatch Back
+- Close: signal for Longitude's sales team (if applicable)`
+  },
+  "industry-practice": {
+    label: "Industry Practice",
+    length: "500–650 words",
+    outputFormat: `- One core principle (lede paragraph)
+- Three concrete tactics (each: action + metric + local example if available)
+- Close: lowest-friction first step for a Wasatch Back agent`
+  },
+  "comp-market-brief": {
+    label: "Comp Market Brief",
+    length: "250–350 words",
+    outputFormat: `- One comp market, two or three data points
+- One implication for Park City / Heber Valley pricing trajectory
+- Close: what an agent should watch in the next 60 days`
+  }
+};
+
+function isThinSummary(summary) {
+  if (!summary || summary.trim() === "(none)") return true;
+  const words = summary.trim().split(/\s+/).length;
+  return words < 25 || summary.includes("appeared first on");
+}
+
+function buildGPTPrompt(selected, articleType, theme, audience, zones, calendarMoment, platformFocus) {
+  const meta       = TYPE_META[articleType];
+  const audText    = audience.length ? audience.join(" + ")  : "Listing Agents + Buyer Agents";
+  const zoneText   = zones.length    ? zones.join(" + ")     : "Park City + Heber Valley";
+  const calText    = calendarMoment  || "spring listing season";
+  const platText   = platformFocus   || "not specified";
+
+  const sourceCapsules = selected.map((a, i) => {
+    const thin = isThinSummary(a.summary);
+    const sigNote = thin
+      ? "[REQUIRED — thin summary; derive high-level signal from title only]"
+      : "[REQUIRED — from title + summary]";
+    const measNote = thin
+      ? "[REQUIRED — thin summary; list recommended metrics relevant to the title, do not claim source stated them]"
+      : "[REQUIRED — from summary]";
+    let capsule =
+`SOURCE ${i+1}:
+Title: ${a.title}
+Outlet: ${a.source}
+Date: ${formatDate(a.published)}
+URL: ${a.link}
+Market Area: ${a.market_area || "National"}
+RSS Summary: ${a.summary || "(none)"}
+- Signal: ${sigNote}
+- Meaning (tie to Wasatch Back agents):
+- Mechanism:
+- Action:
+- Measurement: ${measNote}`;
+    if (thin) {
+      capsule +=
+`\nOperator Notes (optional — fill to improve specificity):
+- What changed:
+- Why it matters for ${zoneText} agents:`;
+    }
+    return capsule;
+  }).join("\n\n");
+
+  return `You are the Wasatch Intelligence content engine for Longitude.
+
+Longitude is a real estate intelligence platform serving agents and brokers in the Wasatch Back (Summit County and Wasatch County, Utah).
+
+Write in a credible, current, and efficient voice — like the best local business desk at a regional newspaper. Agents are busy; get to the point. Use first person plural ("agents here", "the market is") not abstract business-speak.
+
+NEVER write: "in the ever-evolving landscape of...", "game-changing", "synergy", "disruptive", or "innovative" without a concrete example.
+
+CONTENT TYPE: ${meta.label}
+THEME / ANGLE: ${theme || "(derive a specific angle from the source titles)"}
+LENGTH: ${meta.length}
+AUDIENCE: ${audText}
+MARKET ZONE: ${zoneText}
+CALENDAR MOMENT: ${calText}
+PLATFORM FOCUS: ${platText}
+
+WASATCH BACK CONTEXT
+Summit County seat: Coalville. Major communities: Park City, Heber City (Wasatch County), Midway, Oakley, Kamas.
+Park City zip codes: 84060 (lower), 84098 (Pinebrook/Jeremy Ranch area).
+Primary brokerage presence: Summit Sotheby's International Realty, Berkshire Hathaway HomeServices Utah Properties, Coldwell Banker, KW Park City, Engel & Volkers Park City, Compass.
+
+WRITE RULES (non-negotiable)
+- Lede: strongest fact or implication first, 1–2 sentences.
+- Body: 3–4 paragraphs, each advancing the story or adding a useful angle.
+- Close: specific, actionable — what does an agent do with this information?
+- Every paragraph must include at least one: audience segment, mechanism, metric, or concrete local example.
+- Paraphrase sources; do not quote verbatim.
+- Avoid filler phrases listed above.
+
+FACT BOUNDARY (NON-NEGOTIABLE)
+Only assert facts that appear explicitly in the SOURCE CAPSULES below.
+Do not fabricate statistics, agent names, sale prices, or brokerage details.
+If a source summary is thin (fewer than 25 words or contains "appeared first on"):
+  - Note what angle you are inferring
+  - Flag it with [VERIFY: ...] so the editor can confirm before publishing
+If no usable source material is provided, respond with:
+  "INSUFFICIENT SOURCE MATERIAL — please add article summaries"
+  rather than generating content from prior knowledge.
+
+SOURCE CAPSULES
+${sourceCapsules}
+
+OUTPUT FORMAT (${meta.label})
+${meta.outputFormat}
+
+Close with one sentence connecting this content to Longitude's value for Wasatch Back agents.
+
+Write the article now.`;
+}
+
+// ── Pick-2 chip logic ──────────────────────────────────────────────────────
+function initPickChips(containerId, hintId, max) {
+  const container = document.getElementById(containerId);
+  const hint = document.getElementById(hintId);
+  container.addEventListener("click", e => {
+    const chip = e.target.closest(".pick-chip");
+    if (!chip) return;
+    const selected = container.querySelectorAll(".pick-chip.selected");
+    if (chip.classList.contains("selected")) {
+      chip.classList.remove("selected");
+    } else {
+      if (selected.length >= max) {
+        selected[0].classList.remove("selected");
+      }
+      chip.classList.add("selected");
+    }
+    const now = container.querySelectorAll(".pick-chip.selected");
+    hint.textContent = `${now.length} of ${max} selected`;
+  });
+}
+
+function getPickValues(containerId) {
+  return [...document.querySelectorAll(`#${containerId} .pick-chip.selected`)]
+    .map(c => c.dataset.val);
+}
+
+initPickChips("audienceChips", "audienceHint", 2);
+initPickChips("zoneChips",     "zoneHint",     2);
+
+let selectedArticleType = "market-update";
+
+document.querySelectorAll(".type-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedArticleType = btn.dataset.type;
+  });
+});
+
+async function openCompose() {
+  const selected = await api("/api/export");
+  const chips = document.getElementById("sourceChips");
+  const countEl = document.getElementById("sourceCount");
+  chips.innerHTML = "";
+  document.getElementById("promptOutput").style.display = "none";
+  document.getElementById("archiveBlock").style.display = "none";
+
+  if (!selected.length) {
+    chips.innerHTML = '<div class="no-selected-msg">No articles in queue yet.<br>Click <strong>★ Queue</strong> on cards first.</div>';
+    countEl.textContent = "";
+  } else {
+    countEl.textContent = `(${selected.length} article${selected.length !== 1 ? "s" : ""})`;
+    selected.forEach(a => {
+      const chip = document.createElement("div");
+      chip.className = "source-chip";
+      chip.innerHTML = `<strong>${a.title}</strong><span>${a.source} · ${formatDate(a.published)}${a.market_area ? " · " + a.market_area : ""}</span>`;
+      chips.appendChild(chip);
+    });
+  }
+  document.getElementById("composePanel").style.display = "flex";
+}
+
+document.getElementById("openComposeBtn").addEventListener("click", openCompose);
+document.getElementById("closeComposeBtn").addEventListener("click", () => {
+  document.getElementById("composePanel").style.display = "none";
+});
+
+document.getElementById("generatePromptBtn").addEventListener("click", async () => {
+  const selected = await api("/api/export");
+  if (!selected.length) {
+    alert("Add at least one article to your queue first (click ★ Queue on cards).");
+    return;
+  }
+
+  const theme         = document.getElementById("themeInput").value.trim();
+  const audience      = getPickValues("audienceChips");
+  const zones         = getPickValues("zoneChips");
+  const calendarMoment = document.getElementById("calendarInput").value.trim();
+  const platformFocus = document.getElementById("platformInput").value.trim();
+
+  const prompt = buildGPTPrompt(selected, selectedArticleType, theme, audience, zones, calendarMoment, platformFocus);
+
+  document.getElementById("promptText").value = prompt;
+  document.getElementById("promptOutput").style.display = "block";
+  document.getElementById("archiveBlock").style.display = "block";
+  document.getElementById("promptText").scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+
+document.getElementById("copyPromptBtn").addEventListener("click", async () => {
+  const text = document.getElementById("promptText").value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    const s = document.getElementById("composeStatus");
+    s.textContent = "✓ Copied — paste into your Wasatch Intelligence GPT";
+    setTimeout(() => s.textContent = "", 3000);
+  } catch(e) {
+    document.getElementById("composeStatus").textContent = "Select all text above and copy manually";
+  }
+});
+
+// ── Archive sources after compose ─────────────────────────────────────────
+document.getElementById("archiveBtn").addEventListener("click", async () => {
+  const tag = document.getElementById("archiveTagInput").value.trim();
+  if (!tag) {
+    document.getElementById("archiveStatus").textContent = "Enter an article title first.";
+    return;
+  }
+  const selected = await api("/api/export");
+  if (!selected.length) return;
+
+  const ids = selected.map(a => a.id);
+  for (const id of ids) {
+    await api("/api/update", "POST", { id, status: "archived", issue_tag: tag });
+  }
+  allArticles.forEach(a => {
+    if (ids.includes(a.id)) { a.status = "archived"; a.issue_tag = tag; }
+  });
+
+  const s = document.getElementById("archiveStatus");
+  s.textContent = `✓ ${ids.length} article${ids.length !== 1 ? "s" : ""} archived as "${tag}"`;
+  setTimeout(() => s.textContent = "", 4000);
+
+  document.getElementById("archiveTagInput").value = "";
+  document.getElementById("archiveBlock").style.display = "none";
+  renderArticles(); loadStats();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadStats();
+loadArticles();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>

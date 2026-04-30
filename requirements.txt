@@ -1,0 +1,10 @@
+# Wasatch Intelligence — Python dependencies
+#
+# Core tool runs entirely on Python standard library.
+# The one optional dependency improves RSS parsing accuracy:
+
+# Optional — improves brokerage roster scraping in movement_tracker.py
+# beautifulsoup4>=4.12.0
+
+# To install optional deps:
+#   pip install beautifulsoup4
