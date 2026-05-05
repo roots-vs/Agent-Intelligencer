@@ -1,5 +1,5 @@
 @echo off
-REM run_windows.bat — Wasatch Intelligence one-click launcher (Windows)
+REM run_windows.bat — Utah Mountain Living — Longitude Market Intelligence one-click launcher (Windows)
 REM ─────────────────────────────────────────────────────────────────────
 REM Fetches latest articles, then opens the curation dashboard.
 REM Double-click this file to start.
@@ -7,7 +7,7 @@ REM Double-click this file to start.
 cd /d "%~dp0"
 
 echo.
-echo   Wasatch Intelligence — Starting up...
+echo   Utah Mountain Living — Longitude Market Intelligence — Starting up...
 echo.
 
 where python >nul 2>&1

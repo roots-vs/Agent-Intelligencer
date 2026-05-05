@@ -1,4 +1,4 @@
-# Wasatch Intelligence — Curation Tool
+# Utah Mountain Living — Longitude Market Intelligence — Curation Tool
 
 A local content intelligence platform for Longitude. Aggregates real estate news, agent movement signals, and market data for the Wasatch Back (Summit and Wasatch Counties, Utah). Runs entirely on your computer — no cloud accounts required.
 
@@ -69,7 +69,7 @@ Each article also carries a **Market Area** tag: `Wasatch Back`, `National`, or 
    - **Save** — worth reading again, not decided
    - **Skip** — not relevant, hide it
 4. **Open Compose** → select content type, audience, zone, calendar moment
-5. **Generate Claude Prompt** → copy and paste into your Wasatch Intelligence GPT
+5. **Generate Claude Prompt** → copy and paste into your Utah Mountain Living — Longitude Market Intelligence GPT
 6. **Archive sources** with an article title tag when done
 
 ---
@@ -269,7 +269,7 @@ This fetches new articles every morning at 7 AM, and checks agent movement every
 
 ## Signal Priority
 
-From the Wasatch Intelligence charter — use this when multiple signals arrive on the same day:
+From the Utah Mountain Living — Longitude Market Intelligence charter — use this when multiple signals arrive on the same day:
 
 | Priority | Act when | Examples |
 |---|---|---|

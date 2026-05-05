@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-aggregator.py — Wasatch Intelligence Content Aggregator
+aggregator.py — Utah Mountain Living — Longitude Market Intelligence Content Aggregator
 ---------------------------------------------------------
 Fetches all RSS/Atom feeds in feeds.py and stores new articles to SQLite.
 Run this daily (or manually) to populate the curation database.
@@ -290,7 +290,7 @@ def run(dry_run=False, max_days=MAX_DAYS, category_filter=None):
     now = datetime.now(timezone.utc).isoformat()
 
     print(f"\n{'='*60}")
-    print(f"  Wasatch Intelligence Content Aggregator")
+    print(f"  Utah Mountain Living — Longitude Market Intelligence Content Aggregator")
     print(f"  Run: {now[:19]}Z")
     if category_filter:
         print(f"  Category filter: {category_filter}")
@@ -368,7 +368,7 @@ def run(dry_run=False, max_days=MAX_DAYS, category_filter=None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Wasatch Intelligence RSS Aggregator")
+    parser = argparse.ArgumentParser(description="Utah Mountain Living — Longitude Market Intelligence RSS Aggregator")
     parser.add_argument("--days",     type=int, default=MAX_DAYS,
                         help="Max article age in days (default: 90)")
     parser.add_argument("--dry-run",  action="store_true",

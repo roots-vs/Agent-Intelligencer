@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-market_data.py — Wasatch Intelligence Market Data Ingestion
+market_data.py — Utah Mountain Living — Longitude Market Intelligence Market Data Ingestion
 ------------------------------------------------------------
 Fetches and stores Wasatch Back real estate market statistics.
 Data is stored in the 'market_stats' table in curation.db.
@@ -233,7 +233,7 @@ def generate_capsule(conn, area):
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(
-        description="Wasatch Intelligence Market Data",
+        description="Utah Mountain Living — Longitude Market Intelligence Market Data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

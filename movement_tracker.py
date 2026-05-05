@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-movement_tracker.py — Wasatch Intelligence Agent Movement Tracker
+movement_tracker.py — Utah Mountain Living — Longitude Market Intelligence Agent Movement Tracker
 ------------------------------------------------------------------
 Checks known brokerage roster pages for new or removed agents and logs
 changes as articles in curation.db with category='agent-intel'.
@@ -210,11 +210,11 @@ def insert_movement_article(conn, brokerage, agent_name, movement_type, url, dry
     if movement_type == "joined":
         title   = f"New agent at {brokerage}: {agent_name}"
         summary = (f"{agent_name} has joined {brokerage}. "
-                   f"Detected by Wasatch Intelligence roster monitor on {now[:10]}.")
+                   f"Detected by Utah Mountain Living — Longitude Market Intelligence roster monitor on {now[:10]}.")
     else:
         title   = f"{agent_name} left {brokerage}"
         summary = (f"{agent_name} no longer appears on the {brokerage} roster. "
-                   f"Detected by Wasatch Intelligence on {now[:10]}.")
+                   f"Detected by Utah Mountain Living — Longitude Market Intelligence on {now[:10]}.")
 
     uid_str = hashlib.sha1(f"movement::{brokerage}::{agent_name}::{movement_type}::{now[:10]}".encode()).hexdigest()
 
@@ -243,7 +243,7 @@ def run(dry_run=False, brokerage_filter=None):
 
     now = datetime.now(timezone.utc).isoformat()
     print(f"\n{'='*60}")
-    print(f"  Wasatch Intelligence — Agent Movement Tracker")
+    print(f"  Utah Mountain Living — Longitude Market Intelligence — Agent Movement Tracker")
     print(f"  Run: {now[:19]}Z")
     if brokerage_filter:
         print(f"  Brokerage filter: {brokerage_filter}")
@@ -322,7 +322,7 @@ def run(dry_run=False, brokerage_filter=None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Wasatch Intelligence Agent Movement Tracker")
+    parser = argparse.ArgumentParser(description="Utah Mountain Living — Longitude Market Intelligence Agent Movement Tracker")
     parser.add_argument("--dry-run",    action="store_true",
                         help="Print changes without saving to database")
     parser.add_argument("--brokerage",  type=str, default=None,

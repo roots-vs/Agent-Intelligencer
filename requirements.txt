@@ -1,4 +1,4 @@
-# Wasatch Intelligence — Python dependencies
+# Utah Mountain Living — Longitude Market Intelligence — Python dependencies
 #
 # Core tool runs entirely on Python standard library.
 # Optional dependencies improve specific features:

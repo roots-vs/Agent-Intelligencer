@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-server.py — Wasatch Intelligence Curation Dashboard
+server.py — Utah Mountain Living — Longitude Market Intelligence Curation Dashboard
 -----------------------------------------------------
 Starts a local web server at http://localhost:8765 with a review dashboard.
 All data stays on your machine — nothing is sent to the internet.
@@ -213,7 +213,7 @@ def main():
         print("  Created new database. Run aggregator.py to populate it.")
 
     url = f"http://localhost:{args.port}"
-    print(f"\n  Wasatch Intelligence Curation Dashboard")
+    print(f"\n  Utah Mountain Living — Longitude Market Intelligence Curation Dashboard")
     print(f"  Open: {url}")
     print(f"  Stop: Ctrl+C\n")
 

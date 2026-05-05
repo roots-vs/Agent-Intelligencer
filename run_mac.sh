@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_mac.sh — Wasatch Intelligence one-click launcher (Mac)
+# run_mac.sh — Utah Mountain Living — Longitude Market Intelligence one-click launcher (Mac)
 # ────────────────────────────────────────────────────────────
 # Fetches latest articles, then opens the curation dashboard.
 # Double-click this file in Finder, or run: bash run_mac.sh
@@ -7,7 +7,7 @@
 cd "$(dirname "$0")"
 
 echo ""
-echo "  Wasatch Intelligence — Starting up…"
+echo "  Utah Mountain Living — Longitude Market Intelligence — Starting up…"
 echo ""
 
 # Check for Python 3

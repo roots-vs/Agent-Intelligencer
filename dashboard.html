@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wasatch Intelligence — Curation Dashboard</title>
+<title>Utah Mountain Living — Longitude Market Intelligence — Curation Dashboard</title>
 <style>
   :root {
     --navy:    #0D1B3E;
@@ -320,7 +320,7 @@
 <body>
 
 <header>
-  <div class="logo">WASATCH <span>INTELLIGENCE</span> — Longitude</div>
+  <div class="logo">LONGITUDE <span>MARKET INTELLIGENCE</span></div>
   <div class="meta" id="lastFetch">Loading…</div>
 </header>
 
@@ -475,12 +475,12 @@
     </div>
 
     <div id="promptOutput">
-      <span class="prompt-label">8 — Copy prompt → paste into your Wasatch Intelligence GPT</span>
+      <span class="prompt-label">8 — Copy prompt → paste into your Utah Mountain Living — Longitude Market Intelligence GPT</span>
       <textarea id="promptText" readonly></textarea>
       <button class="prompt-copy-btn" id="copyPromptBtn">Copy Prompt to Clipboard</button>
       <div id="composeStatus"></div>
       <div class="prompt-hint">
-        Paste into your <strong>Wasatch Intelligence GPT</strong> to generate the draft. Use the GPT system prompt from the project charter (Section 5).
+        Paste into your <strong>Utah Mountain Living — Longitude Market Intelligence GPT</strong> to generate the draft. Use the GPT system prompt from the project charter (Section 5).
       </div>
 
       <!-- Archive after compose -->
@@ -761,7 +761,7 @@ document.getElementById("copyMarkdownBtn").addEventListener("click", async () =>
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(a);
   });
-  let md = "## Wasatch Intelligence — Selected Signals\n\n";
+  let md = "## Utah Mountain Living — Longitude Market Intelligence — Selected Signals\n\n";
   for (const [cat, arts] of Object.entries(grouped)) {
     md += `### ${cat.toUpperCase().replace(/-/g," ")}\n\n`;
     arts.forEach(a => {
@@ -872,7 +872,7 @@ RSS Summary: ${a.summary || "(none)"}
     return capsule;
   }).join("\n\n");
 
-  return `You are the Wasatch Intelligence content engine for Longitude.
+  return `You are the Utah Mountain Living — Longitude Market Intelligence content engine for Longitude.
 
 Longitude is a real estate intelligence platform serving agents and brokers in the Wasatch Back (Summit County and Wasatch County, Utah).
 
@@ -1016,7 +1016,7 @@ document.getElementById("copyPromptBtn").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(text);
     const s = document.getElementById("composeStatus");
-    s.textContent = "✓ Copied — paste into your Wasatch Intelligence GPT";
+    s.textContent = "✓ Copied — paste into your Utah Mountain Living — Longitude Market Intelligence GPT";
     setTimeout(() => s.textContent = "", 3000);
   } catch(e) {
     document.getElementById("composeStatus").textContent = "Select all text above and copy manually";

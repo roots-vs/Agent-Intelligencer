@@ -1,4 +1,4 @@
-# Wasatch Intelligence — Agent Intelligencer
+# Utah Mountain Living — Longitude Market Intelligence — Agent Intelligencer
 ### CLAUDE.md — Project briefing for Claude Code
 
 This file is read automatically at the start of every Claude Code session.
@@ -8,7 +8,7 @@ It contains everything needed to resume work without re-explanation.
 
 ## What This Is
 
-**Wasatch Intelligence** is a local content intelligence platform for
+**Utah Mountain Living — Longitude Market Intelligence** is a local content intelligence platform for
 **Longitude**, a real estate intelligence company focused on the Wasatch Back
 market (Park City, Summit County, Wasatch County, Heber Valley, Utah).
 
@@ -271,7 +271,7 @@ Automate with cron (Mac):
 
 ---
 
-## Signal Priority (from Wasatch Intelligence charter)
+## Signal Priority (from Utah Mountain Living — Longitude Market Intelligence charter)
 
 | Priority | Act when | Examples |
 |---|---|---|

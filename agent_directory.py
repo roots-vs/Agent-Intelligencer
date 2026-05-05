@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-agent_directory.py — Wasatch Intelligence Agent Directory
+agent_directory.py — Utah Mountain Living — Longitude Market Intelligence Agent Directory
 -----------------------------------------------------------
 Maintains a local SQLite table of licensed real estate agents and brokers
 in Summit County and Wasatch County, Utah.
@@ -222,7 +222,7 @@ def show_stats(conn):
 # ── CLI ───────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(
-        description="Wasatch Intelligence Agent Directory",
+        description="Utah Mountain Living — Longitude Market Intelligence Agent Directory",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

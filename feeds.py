@@ -1,5 +1,5 @@
 """
-feeds.py — Wasatch Intelligence RSS Feed Registry
+feeds.py — Utah Mountain Living — Longitude Market Intelligence RSS Feed Registry
 --------------------------------------------------
 Add, remove, or adjust feeds here. Run aggregator.py to pull them.
 

@@ -36,12 +36,13 @@ import sqlite3
 import hashlib
 import argparse
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 
 # ── Config ────────────────────────────────────────────────────────────────────
-SQLITE_DB  = os.path.join(os.path.dirname(__file__), "curation.db")
+SQLITE_DB  = os.path.expanduser("~/.longitude/curation.db")
 
 PG_CONFIG = {
     "host":     os.environ.get("PG_HOST",     "localhost"),
@@ -233,23 +234,8 @@ def cache_agents_in_sqlite(sqlite_conn, agents):
            ig_handle, agent_website, zillow_service_areas, last_synced)
         VALUES (:email, :full_name, :brokerage_name, :specialty,
                 :zillow_sales_12mo, :zillow_price_range_max, :realtrends_rank,
-                :ig_handle, :agent_website, :zillow_service_areas, ?)
-    """, [{**a, "__now": now} | {"__now": now} for a in agents])
-
-    # Fix the parameterized insert (sqlite3 named params don't use extra keys)
-    sqlite_conn.execute("DELETE FROM longitude_agents")
-    for a in agents:
-        sqlite_conn.execute("""
-            INSERT OR REPLACE INTO longitude_agents
-              (email, full_name, brokerage_name, specialty,
-               zillow_sales_12mo, zillow_price_range_max, realtrends_rank,
-               ig_handle, agent_website, zillow_service_areas, last_synced)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
-        """, (
-            a["email"], a["full_name"], a["brokerage_name"], a["specialty"],
-            a["zillow_sales_12mo"], a["zillow_price_range_max"], a["realtrends_rank"],
-            a["ig_handle"], a["agent_website"], a["zillow_service_areas"], now
-        ))
+                :ig_handle, :agent_website, :zillow_service_areas, :last_synced)
+    """, [{**a, "last_synced": now} for a in agents])
     sqlite_conn.commit()
     print(f"  ✓  Cached {len(agents):,} agents in longitude_agents table")
 
@@ -257,12 +243,16 @@ def cache_agents_in_sqlite(sqlite_conn, agents):
 # ── Agent name matching ───────────────────────────────────────────────────────
 def build_name_index(agents):
     """
-    Build a lookup structure for fast name matching.
+    Build a lookup structure for name matching.
+    Only indexes agents with at least first + last name (2+ words).
     Returns dict: normalized_name → agent dict
     """
     index = {}
     for a in agents:
         name = a["full_name"].strip()
+        parts = name.split()
+        if len(parts) < 2:          # require first + last
+            continue
         if len(name) < MIN_NAME_LENGTH:
             continue
         key = name.lower()
@@ -270,11 +260,21 @@ def build_name_index(agents):
     return index
 
 
-def fuzzy_match(text_lower, name_index, cutoff=FUZZY_MATCH_CUTOFF):
+def find_agents_in_text(text_lower, name_index):
     """
-    Find all agents whose names appear in the text.
-    Returns list of (agent_dict, match_type, score) tuples.
+    Find agents where first AND last name both appear as whole words
+    within 5 word-positions of each other in the text.
+
+    No fuzzy matching — requires exact word presence.
+    Match type is 'exact' when the full name appears as a contiguous phrase
+    (in name order), 'proximity' when within the 5-word window but non-adjacent.
     """
+    # Build word-position index for the text once, shared across all agents
+    words = re.findall(r'\b[a-z]+\b', text_lower)
+    positions: dict = {}
+    for i, w in enumerate(words):
+        positions.setdefault(w, []).append(i)
+
     matches = []
     seen = set()
 
@@ -282,24 +282,34 @@ def fuzzy_match(text_lower, name_index, cutoff=FUZZY_MATCH_CUTOFF):
         if agent["email"] in seen:
             continue
 
-        # Exact substring match (fast path)
-        if norm_name in text_lower:
-            matches.append((agent, "exact", 1.0))
-            seen.add(agent["email"])
+        parts      = norm_name.split()
+        first_word = parts[0]
+        last_word  = parts[-1]
+
+        first_pos = positions.get(first_word, [])
+        last_pos  = positions.get(last_word, [])
+
+        if not first_pos or not last_pos:
             continue
 
-        # Fuzzy: try last name + first initial or full name similarity
-        # Only run fuzzy if name is 8+ chars (avoids false positives on short names)
-        if len(norm_name) >= 8:
-            # Sliding window — check if any same-length substring scores highly
-            name_len = len(norm_name)
-            for i in range(0, max(1, len(text_lower) - name_len + 1), 3):
-                chunk = text_lower[i:i + name_len]
-                score = SequenceMatcher(None, norm_name, chunk).ratio()
-                if score >= cutoff:
-                    matches.append((agent, "fuzzy", round(score, 3)))
-                    seen.add(agent["email"])
+        found    = False
+        is_exact = False
+        for fp in first_pos:
+            for lp in last_pos:
+                if abs(fp - lp) <= 5:
+                    found = True
+                    # Exact: words appear in name order with no extra words between
+                    if lp - fp == len(parts) - 1:
+                        is_exact = True
                     break
+            if found:
+                break
+
+        if found:
+            match_type = "exact" if is_exact else "proximity"
+            score      = 1.0 if is_exact else 0.9
+            matches.append((agent, match_type, score))
+            seen.add(agent["email"])
 
     return matches
 
@@ -330,7 +340,7 @@ def scan_articles_for_agents(sqlite_conn, agents, dry_run=False, days_back=90):
     for uid_, title, summary, source, category, published, link in articles:
         text = f"{title or ''} {summary or ''}".lower()
 
-        matches = fuzzy_match(text, name_index)
+        matches = find_agents_in_text(text, name_index)  # no fuzzy — proximity only
         for agent, match_type, score in matches:
             email = agent["email"]
             if dry_run:
@@ -742,7 +752,7 @@ def show_agent(sqlite_conn, name_query, agents):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def run(scan=True, performance=True, network=True, dry_run=False, agent_name=None):
-    sqlite_conn = sqlite3.connect(SQLITE_DB)
+    sqlite_conn = sqlite3.connect(SQLITE_DB, timeout=30)
     init_sqlite_extensions(sqlite_conn)
 
     now = now_iso()
@@ -820,7 +830,7 @@ if __name__ == "__main__":
 
     # If --stats, just show stats (no PG connection needed)
     if args.stats:
-        sqlite_conn = sqlite3.connect(SQLITE_DB)
+        sqlite_conn = sqlite3.connect(SQLITE_DB, timeout=30)
         init_sqlite_extensions(sqlite_conn)
         show_stats(sqlite_conn)
         sqlite_conn.close()
@@ -828,7 +838,7 @@ if __name__ == "__main__":
 
     # If --topics, tag articles by topic without touching PostgreSQL
     if args.topics:
-        sqlite_conn = sqlite3.connect(SQLITE_DB)
+        sqlite_conn = sqlite3.connect(SQLITE_DB, timeout=30)
         init_sqlite_extensions(sqlite_conn)
         now = now_iso()
         print(f"\n{'='*60}")

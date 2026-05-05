@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-rankings_tracker.py — Wasatch Intelligence Agent Performance Rankings
+rankings_tracker.py — Utah Mountain Living — Longitude Market Intelligence Agent Performance Rankings
 ----------------------------------------------------------------------
 Stores and queries agent performance data from trusted annual/periodic
 ranking sources. Since most ranking pages are JavaScript-rendered and
@@ -552,7 +552,7 @@ def generate_article(source, year, ranked_by="volume"):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Wasatch Intelligence — Agent Performance Rankings Tracker"
+        description="Utah Mountain Living — Longitude Market Intelligence — Agent Performance Rankings Tracker"
     )
     parser.add_argument("--import",    dest="import_file", metavar="FILE",
                         help="Import rankings from CSV file")
@@ -579,7 +579,7 @@ def main():
 
     print()
     print("=" * 60)
-    print("  Wasatch Intelligence — Rankings Tracker")
+    print("  Utah Mountain Living — Longitude Market Intelligence — Rankings Tracker")
     print("=" * 60)
 
     if args.import_file:
